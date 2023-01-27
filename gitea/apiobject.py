@@ -357,21 +357,39 @@ class Repository(ApiObject):
         return cls._request(gitea, {"owner": owner, "name": name})
 
     _patchable_fields = {
+        "allow_manual_merge",
         "allow_merge_commits",
         "allow_rebase",
         "allow_rebase_explicit",
+        "allow_rebase_update",
         "allow_squash_merge",
         "archived",
+        "autodetect_manual_merge",
         "default_branch",
+        "default_delete_branch_after_merge",
+        "default_merge_style",
         "description",
+        "enable_prune",
+        "external_tracker",
+        "external_wiki",
         "has_issues",
+        "has_projects",
         "has_pull_requests",
         "has_wiki",
         "ignore_whitespace_conflicts",
+        "internal_tracker",
+        "mirror_interval",
         "name",
         "private",
+        "template",
         "website",
     }
+
+    def commit(self):
+        values = self.get_dirty_fields()
+        args = {"owner": self.owner.username, "name": self.name}
+        self.gitea.requests_patch(self.API_OBJECT.format(**args), data=values)
+        self.dirty_fields = {}
 
     def get_branches(self) -> List['Branch']:
         """Get all the Branches of this Repository."""
@@ -766,25 +784,11 @@ class Team(ApiObject):
         "organization": lambda gitea, o: Organization.parse_response(gitea, o)
     }
 
-    _patchable_fields = {
-        "can_create_org_repo",
-        "description",
-        "includes_all_repositories",
-        "name",
-        "permission",
-        "units",
-        "units_map",
-    }
-
     @classmethod
-    def request(cls, gitea: "Gitea", id: int):
+    def request(cls, gitea: 'Gitea', organization: str, team: str):
         return cls._request(gitea, {"id": id})
 
-    def commit(self):
-        values = self.get_dirty_fields()
-        args = {"id": self.id}
-        self.gitea.requests_patch(self.API_OBJECT.format(**args), data=values)
-        self.dirty_fields = {}
+    _patchable_fields = {"description", "name", "permission", "units"}
 
     def add_user(self, user: User):
         """https://try.gitea.io/api/swagger#/organization/orgAddTeamMember"""
